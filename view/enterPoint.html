@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>First App!</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
+	<style>
+		#preloader{
+			display: block;
+			position: fixed;
+			z-index: 99999;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: #2574A9 url(../puff.svg) center center no-repeat;
+			background-size:73px;
+		}
+	</style>
+</head>
+<body>
+	<!-- preloader -->
+	<div id="preloader-container">
+		<div id="preloader"></div>
+	</div>
+	<div id="wrapper" style="display: none;">
+		<div class="container" style="margin-top: 50px;">
+			<div class="well">
+				<h1 class="text-center">Please, choose your data</h1>
+			</div>
+			<div class="align-items-center row">
+				<div class="col-md-8 offset-md-2">
+					<form id='initial-form'>
+					  <div class="form-group">
+					    <label for="institute-select">Select your institute:</label>
+					    <select class="form-control" id="institute-select" autofocus>
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label for="group-select">Select your group:</label>
+					    <select class="form-control" id="group-select">
+					      
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <input type="submit" class="btn btn-primary btn-lg" value="Load">
+					  </div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	const electron = require('electron')
+	const _$ = require('jquery')
+	const cheerio = require('cheerio')
+	const {ipcRenderer} = electron
+	const mainWindow = electron.remote.getCurrentWindow()
+	
+	const form = _$('#initial-form')
+  	const Preloader = function(el){
+  		this.el = el;
+
+ 		this.start = function(){
+	  		this.el.style.display = "block";
+	  		this.el.style.opacity = 1;
+	  	}
+	  	this.stop = function(){
+	  		var interval = setInterval( () => {
+	  			this.el.style.opacity -= 0.05;
+
+	  			if (el.style.opacity <=0.05){ 
+	  				clearInterval(interval);
+	  				this.el.style.display = "none";
+	  			}
+	  		}, 16);
+	  	}
+  	}
+  	const preloader = new Preloader( document.getElementById("preloader-container") )
+
+	_$(document).ready(function(){
+		load_institutes();
+
+		const institute_select = _$('#institute-select');
+
+		institute_select.on('change', (e) => {
+			const inst_id = e.target.value;
+
+			preloader.start();
+			_$("#group-select").html('');
+
+			_$.get('http://www.lp.edu.ua/rozklad-dlya-studentiv?inst='+inst_id+'&group=&semestr=0&semest_part=1', function(data){
+				var $ = cheerio.load(data);
+
+		  		$('select[name=group] > option').each( (i, el) => {
+		  		 	if( $(el).text().length < 3 ) return;
+
+		  		 	_$("#group-select").append('<option value="'+ $(el).attr('value') +'">'+ $(el).text() +'</option>');
+		  		 	preloader.stop();
+		  		});
+			})
+		})
+
+	  	form.on('submit', e => {
+	  		e.preventDefault();
+
+	  		let inst = document.getElementById('institute-select').value;
+	  		let group = document.getElementById('group-select').value;
+	  	});
+	});
+
+  	function load_institutes(){
+  		preloader.start()
+
+  		_$.get('http://www.lp.edu.ua/rozklad-dlya-studentiv', data => {
+	  		var $ = cheerio.load(data);
+
+	  		$('select[name=inst] > option').each( (i, el) => {
+	  		 	if($(el).text().length < 3) return;
+
+	  		 	_$("#institute-select").append('<option value="'+ $(el).attr('value') +'">'+ $(el).text() +'</option>');
+	  		 	preloader.stop();
+	  		 	_$('#wrapper').css('display', 'block');
+	  		});
+  		});
+  	}
+
+  	ipcRenderer.send('message1');
+
+  	ipcRenderer.on('message', (event, data) => console.log(data))
+
+  	var titlebar = require('titlebar');
+
+  	var t = titlebar();
+  	console.log(t.element);
+  	t.appendTo(document.getElementById('window-nav'));
+
+  	t.on('close', function(e) {
+  		console.log('close');
+  	});
+
+  	// t.element exposes the root dom element
+  	t.element.appendChild(document.createElement('div'));
+
+  	// Clean up after usage
+  	t.destroy();
+</script>
+</html>

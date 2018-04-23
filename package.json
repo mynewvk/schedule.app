@@ -1,0 +1,24 @@
+{
+  "name": "timetable",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "rebuild": "electron-rebuild sqlite3",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "dexie": "^2.0.1",
+    "electron": "^1.7.10",
+    "jquery": "^3.2.1",
+    "request": "^2.83.0",
+    "titlebar": "^1.4.0"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.6.0"
+  }
+}
